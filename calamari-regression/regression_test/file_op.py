@@ -58,7 +58,7 @@ def gen_test_data(root_path):
             # the first time coming in this loop
             if not len(test_data_list):
                 pre_level = test_data.level 
-                level_total_num = np.zeros((pre_level,), dtype=np.int)
+                level_total_num = np.zeros((pre_level + 2,), dtype=np.int)
 
             if level < test_data.level:
                 level = test_data.level
@@ -80,7 +80,7 @@ def gen_test_data(root_path):
                     else:
                         raise Exception("pdf %s does not have corresponding gt.txt file, check your training data file!" % shotname)
                
-            index = test_data.level - 1
+            index = max(0, test_data.level - 1)
 
             if pre_level <= test_data.level:
                 level_total_num[index] += test_data.total_num

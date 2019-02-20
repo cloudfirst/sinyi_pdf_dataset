@@ -33,7 +33,8 @@ def rec_img(path):
 
     logger.error("Get image from pdf from %s" % path)
     dest_file = getImageFromPDF(path)
-    filename, file_extension = os.path.splitext(path)
+    base_name = os.path.basename(dest_file)
+    filename, file_extension = os.path.splitext(base_name)
     
     # Step 1: 图像预处理
     logger.error("step_1_pre_processing_image ...")
@@ -42,11 +43,11 @@ def rec_img(path):
     # Step 2: 定位并提取表格部分
     logger.error("step_2_location_table ...")
     table       = step_2_location_table(orig, canny)
-    # save_processed_image(table,   "/tmp/table_"  + filename + ".tif")
+    save_processed_image(table,   "/tmp/table_"  + filename + ".tif")
     
     # Step 3: 提取表格中每一行的文本
     logger.error("step_3_find_text_lines ...")
-    text_blocks = step_3_find_text_lines(table, filename)
+    text_blocks = step_3_find_text_lines_v2(table, filename)
     
     # Step 4: 识别表格中每一行的文本，并查找关键字极其取值
     logger.error("step_4_read_keyword_and_value ...")
