@@ -23,7 +23,7 @@ def get_statistic_result(data_list, result_path):
         else:
             percentage = 0.0
 	
-        content = "%s/%s %s%% %s\n" % (str(d.error_num), str(d.total_num), str(percentage*100), d.relative_path)
+        content = "%+6s/%-6s %.2f%% %s\n" % (str(d.error_num), str(d.total_num), percentage*100,  d.relative_path)
         #content = 'total_num: ' + str(d.total_num) + ' error_num: ' + str(d.error_num) + ' percentage: ' + str(percentage) + ' ' + d.relative_path + '\n'
         #content = str(percentage) + ' ' + d.relative_path + '\n'
         write_to_file(result_path, content)
