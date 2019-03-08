@@ -43,7 +43,7 @@ def rec_img(path):
     # Step 2: 定位并提取表格部分
     logger.error("step_2_location_table ...")
     table       = step_2_location_table(orig, canny)
-    save_processed_image(table,   "/tmp/table_"  + filename + ".tif")
+    save_processed_image(table,   "/tmp/table_"  + filename + ".png")
     
     # Step 3: 提取表格中每一行的文本
     logger.error("step_3_find_text_lines ...")
