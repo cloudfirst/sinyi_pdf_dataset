@@ -141,7 +141,7 @@ def main():
                     ret = rec_img(path)
                     if not get_result(test_data, gt, ret, args.flag):
                         test_data.error_num += 1
-                        write_to_file(args.result+'_files', path + '\n')
+                        write_to_file(args.result+'_files', path + '    # ')
                         content_rec = 'rec: ' + '[' + ret['ztgz'] + ',' + ret['heji1'] + ',' + ret['heji2'] + ']'
                         content_gt = '; gt: ' + '[' + gt[0] + ',' + gt[1] + ',' + gt[2] + ']\n'
                         
