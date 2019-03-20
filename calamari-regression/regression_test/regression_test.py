@@ -8,8 +8,7 @@ import argparse
 from file_op import TestData, gen_test_data, get_gt, write_to_file
 
 from get_ztgz.get_ztgz import gen_big_table, gen_get_value, focus_words
-big_table = gen_big_table()
-get_ztgz = gen_get_value(big_table)
+from get_ztgz.get_ztgz_2 import find_most_like
 
 from sinobotocr.cv2_helper import *
 from sinobotocr.cv2_helper2 import *
@@ -17,6 +16,22 @@ from sinobotocr.my_pdf2img import *
 
 logger = get_my_logger()
 db_name = 'test.db'
+
+def gen_compare_ztgz(alt_ztgz = False):
+    big_table = gen_big_table()
+    get_ztgz = gen_get_value(big_table)
+    def compare_ztgz(ret, gt):
+        gt_v = focus_words(gt)
+        ret_v = get_ztgz(focus_words(ret))
+        return gt_v == ret_v
+    def compare_ztgz_alt(ret, gt):
+        gt_v = focus_words(gt)
+        ret_v = find_most_like(focus_words(ret))
+        return gt_v == ret_v
+    if alt_ztgz:
+        return compare_ztgz_alt
+    else:
+        return compare_ztgz
 
 def get_statistic_result(data_list, result_path):
 
@@ -76,7 +91,7 @@ def rec_img(path):
 
     return ret
 
-def get_result(test_data, gt, ret, flag):
+def get_result(test_data, gt, ret, flag, compare_ztgz):
     if flag == "all":
         if gt[0] == ret['ztgz']  and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
             return True
@@ -88,12 +103,7 @@ def get_result(test_data, gt, ret, flag):
         else:
             return False
     if flag == "ztgz":
-        gt =  focus_words(gt[0]))
-        ret = get_ztgz(focus_words(ret['ztgz']))
-        if gt == ret:
-            return True
-        else:
-            return False
+        return compare_ztgz(ret['ztgz'], gt[0])
 
 '''
 def calc_error_num(test_data_list):
@@ -109,6 +119,8 @@ def setup_train_args(parser):
     parser.add_argument("-t", "--result", default=False, help='result path')
     # all, heji, and ztgz
     parser.add_argument("-f", "--flag", default="heji", help="result compare flag")
+    # toggle get_ztgz / get_ztgz_2
+    parser.add_argument("--alt-ztgz", default=False, action="store_true", help="--alt-ztgz to use get_ztgz_2.py to compare ztgz")
 
 def usage():
     print("Usage: ")
@@ -116,11 +128,13 @@ def usage():
     print("   pdf directory, say, /tmp/test")
     print("   result file,   say, /tmp/result")
     print("   compare flag,  say, one of [all, heji, ztgz]")
-    
+
 def main():
     parser = argparse.ArgumentParser()
     setup_train_args(parser)
     args = parser.parse_args()
+
+    compare_ztgz = gen_compare_ztgz(alt_ztgz=args.alt_ztgz)
 
     if args.root == False or args.result == False:
         usage()
@@ -145,7 +159,7 @@ def main():
 
                 try:
                     ret = rec_img(path)
-                    if not get_result(test_data, gt, ret, args.flag):
+                    if not get_result(test_data, gt, ret, args.flag, compare_ztgz):
                         test_data.error_num += 1
                         write_to_file(args.result+'_files', path + '\n')
                         content_rec = 'rec: ' + '[' + ret['ztgz'] + ',' + ret['heji1'] + ',' + ret['heji2'] + ']'
