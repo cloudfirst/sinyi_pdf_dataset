@@ -7,6 +7,10 @@ import argparse
 
 from file_op import TestData, gen_test_data, get_gt, write_to_file
 
+from get_ztgz.get_ztgz import gen_big_table, gen_get_value, focus_words
+big_table = gen_big_table()
+get_ztgz = gen_get_value(big_table)
+
 from sinobotocr.cv2_helper import *
 from sinobotocr.cv2_helper2 import *
 from sinobotocr.my_pdf2img import *
@@ -84,7 +88,9 @@ def get_result(test_data, gt, ret, flag):
         else:
             return False
     if flag == "ztgz":
-        if gt[0] == ret['ztgz']:
+        gt =  focus_words(gt[0]))
+        ret = get_ztgz(focus_words(ret['ztgz']))
+        if gt == ret:
             return True
         else:
             return False
