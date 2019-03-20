@@ -28,7 +28,7 @@ def find_most_like(text):
         '木',
         '石',
     ]
-    distance = 999999
+    distance = Levenshtein.distance(ll[0], text)
     current = ''
     for word in ll:
         d = Levenshtein.distance(word, text)

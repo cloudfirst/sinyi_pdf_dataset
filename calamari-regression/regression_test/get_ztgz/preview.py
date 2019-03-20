@@ -5,7 +5,12 @@ big_table = gen_big_table()
 get_value = gen_get_value(big_table)
 
 lines = open('data.txt').read().split('\n')
+lines2 = open('data2.txt').read().split('\n')
+lines.extend(lines2)
 datas = list(map(lambda x:x.split('==>'), lines))
+for data in datas:
+    if len(data) != 2:
+        print(data, len(data))
 
 table_file = open("table.txt", "w")
 lines = []
@@ -19,8 +24,8 @@ count_o = 0
 count_f = 0
 count_v = 0
 for rec,gt in datas:
-    if rec == '' or gt == '':
-        continue
+    # if rec == '' or gt == '':
+    #     continue
     rec_f = focus_words(rec)
     gt_f = focus_words(gt)
     rec_v = get_value(rec_f)
