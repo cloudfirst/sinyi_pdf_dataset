@@ -76,7 +76,7 @@ def rec_img(path):
 
 def get_result(test_data, gt, ret, flag):
     if flag == "all":
-        if gt[0] == ret['ztgz']  and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
+        if compare_ztgz(ret['ztgz'], gt[0]) and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
             return True
         else:
             return False
