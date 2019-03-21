@@ -10,6 +10,8 @@ from file_op import TestData, gen_test_data, get_gt, write_to_file
 from sinobotocr.cv2_helper import *
 from sinobotocr.cv2_helper2 import *
 from sinobotocr.my_pdf2img import *
+from sinobotocr.find_ztgz import gen_compare_ztgz
+compare_ztgz = gen_compare_ztgz()
 
 logger = get_my_logger()
 db_name = 'test.db'
@@ -74,7 +76,7 @@ def rec_img(path):
 
 def get_result(test_data, gt, ret, flag):
     if flag == "all":
-        if gt[0] == ret['ztgz']  and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
+        if compare_ztgz(ret['ztgz'], gt[0]) and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
             return True
         else:
             return False
@@ -84,10 +86,7 @@ def get_result(test_data, gt, ret, flag):
         else:
             return False
     if flag == "ztgz":
-        if gt[0] == ret['ztgz']:
-            return True
-        else:
-            return False
+        return compare_ztgz(ret['ztgz'], gt[0])
 
 '''
 def calc_error_num(test_data_list):
