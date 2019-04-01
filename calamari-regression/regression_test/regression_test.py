@@ -13,6 +13,8 @@ from get_ztgz.get_ztgz_2 import find_most_like
 from sinobotocr.cv2_helper import *
 from sinobotocr.cv2_helper2 import *
 from sinobotocr.my_pdf2img import *
+from sinobotocr.find_ztgz import gen_compare_ztgz
+compare_ztgz = gen_compare_ztgz()
 
 logger = get_my_logger()
 db_name = 'test.db'
@@ -62,7 +64,7 @@ def rec_img(path):
     # Step 2: 定位并提取表格部分
     logger.error("step_2_location_table ...")
     table       = step_2_location_table(orig, canny)
-    save_processed_image(table,   "/tmp/table_"  + filename + ".tif")
+    save_processed_image(table,   "/tmp/table_"  + filename + ".png")
     
     # Step 3: 提取表格中每一行的文本
     logger.error("step_3_find_text_lines ...")
@@ -93,7 +95,7 @@ def rec_img(path):
 
 def get_result(test_data, gt, ret, flag, compare_ztgz):
     if flag == "all":
-        if gt[0] == ret['ztgz']  and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
+        if compare_ztgz(ret['ztgz'], gt[0]) and float(gt[1]) == float(ret['heji1']) and float(gt[2]) == float(ret['heji2']):
             return True
         else:
             return False
@@ -161,7 +163,7 @@ def main():
                     ret = rec_img(path)
                     if not get_result(test_data, gt, ret, args.flag, compare_ztgz):
                         test_data.error_num += 1
-                        write_to_file(args.result+'_files', path + '\n')
+                        write_to_file(args.result+'_files', path + '    # ')
                         content_rec = 'rec: ' + '[' + ret['ztgz'] + ',' + ret['heji1'] + ',' + ret['heji2'] + ']'
                         content_gt = '; gt: ' + '[' + gt[0] + ',' + gt[1] + ',' + gt[2] + ']\n'
                         
