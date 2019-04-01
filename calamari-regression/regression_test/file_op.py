@@ -15,7 +15,9 @@ class TestData():
 
         self.files = []
         self.total_num = 0
-        self.error_num = 0
+        self.all_error_num = 0
+        self.heji_error_num = 0
+        self.ztgz_error_num = 0
 
 def write_to_file(filepath, content):
     f = open(filepath, 'a+', encoding='utf-8')

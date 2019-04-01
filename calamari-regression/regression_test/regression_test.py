@@ -40,14 +40,22 @@ def get_statistic_result(data_list, result_path):
     data_list.reverse()
     for d in data_list:
         if d.total_num:
-            percentage = float(d.total_num - d.error_num)/d.total_num
+            all_percentage = float(d.total_num - d.all_error_num)/d.total_num
+            heji_percentage = float(d.total_num - d.heji_error_num)/d.total_num
+            ztgz_percentage = float(d.total_num - d.ztgz_error_num)/d.total_num
         else:
-            percentage = 0.0
+            all_percentage = 0.0
+            heji_percentage = 0.0
+            ztgz_percentage = 0.0
 	
-        content = "%+6s/%-6s %.2f%% %s\n" % (str(d.error_num), str(d.total_num), percentage*100,  d.relative_path)
+        all_content = "%+6s/%-6s %.2f%% %s\n" % (str(d.all_error_num), str(d.total_num), all_percentage*100,  d.relative_path)
+        heji_content = "%+6s/%-6s %.2f%% %s\n" % (str(d.heji_error_num), str(d.total_num), heji_percentage*100,  d.relative_path)
+        ztgz_content = "%+6s/%-6s %.2f%% %s\n" % (str(d.ztgz_error_num), str(d.total_num), ztgz_percentage*100,  d.relative_path)
         #content = 'total_num: ' + str(d.total_num) + ' error_num: ' + str(d.error_num) + ' percentage: ' + str(percentage) + ' ' + d.relative_path + '\n'
         #content = str(percentage) + ' ' + d.relative_path + '\n'
-        write_to_file(result_path, content)
+        write_to_file(os.path.join(result_path, 'all_result'), all_content)
+        write_to_file(os.path.join(result_path, 'heji_result'), heji_content)
+        write_to_file(os.path.join(result_path, 'ztgz_result'), ztgz_content)
 
 
 def rec_img(path):
@@ -120,16 +128,15 @@ def setup_train_args(parser):
     parser.add_argument("-r", "--root", default=False, help='root path of data')
     parser.add_argument("-t", "--result", default=False, help='result path')
     # all, heji, and ztgz
-    parser.add_argument("-f", "--flag", default="heji", help="result compare flag")
+    #parser.add_argument("-f", "--flag", default="heji", help="result compare flag")
     # toggle get_ztgz / get_ztgz_2
     parser.add_argument("--alt-ztgz", default=False, action="store_true", help="--alt-ztgz to use get_ztgz_2.py to compare ztgz")
 
 def usage():
     print("Usage: ")
-    print(" python regression.py --root <pdf directory> --result <result file full path> --flag <compare flag> ")
+    print(" python regression.py --root <pdf directory> --result <result file full path> ")
     print("   pdf directory, say, /tmp/test")
     print("   result file,   say, /tmp/result")
-    print("   compare flag,  say, one of [all, heji, ztgz]")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -148,8 +155,13 @@ def main():
 
         if test_data == test_data_list[0]:
             pre_level = test_data.level
-            level_error_num = np.zeros((pre_level,), dtype=np.int)
+            level_error_num = dict()
+            level_error_num.clear()
+            level_error_num['all'] = np.zeros((pre_level,), dtype=np.int)
+            level_error_num['heji'] = np.zeros((pre_level,), dtype=np.int)
+            level_error_num['ztgz'] = np.zeros((pre_level,), dtype=np.int)
 
+        test_flag = ["all", "heji", "ztgz"]
         if test_data.files:
             # test_data is of type TestData
             print("-----path: %s------" % (test_data.relative_path))
@@ -161,29 +173,55 @@ def main():
 
                 try:
                     ret = rec_img(path)
-                    if not get_result(test_data, gt, ret, args.flag, compare_ztgz):
-                        test_data.error_num += 1
-                        write_to_file(args.result+'_files', path + '    # ')
-                        content_rec = 'rec: ' + '[' + ret['ztgz'] + ',' + ret['heji1'] + ',' + ret['heji2'] + ']'
-                        content_gt = '; gt: ' + '[' + gt[0] + ',' + gt[1] + ',' + gt[2] + ']\n'
-                        
-                        write_to_file(args.result+'_files', content_rec + content_gt)
-                        write_to_file(args.result+'_files', '\n')
+                    #if not get_result(test_data, gt, ret, args.flag, compare_ztgz):
+                    for flag in test_flag:
+                        if not get_result(test_data, gt, ret, flag, compare_ztgz):
+                            out_file = os.path.join(args.result, flag + '_details')
+                            if flag == "all":
+                                test_data.all_error_num += 1
+                            elif flag == "heji":
+                                test_data.heji_error_num += 1
+                            elif flag == "ztgz":
+                                test_data.ztgz_error_num += 1
+                            #write_to_file(args.result+'_files', path + '    # ')
+                            write_to_file(out_file, path + '    # ')
+                            content_rec = 'rec: ' + '[' + ret['ztgz'] + ',' + ret['heji1'] + ',' + ret['heji2'] + ']'
+                            content_gt = '; gt: ' + '[' + gt[0] + ',' + gt[1] + ',' + gt[2] + ']\n'
+                            
+                            #write_to_file(args.result+'_files', content_rec + content_gt)
+                            #write_to_file(args.result+'_files', '\n')
+
+                            write_to_file(out_file, content_rec + content_gt)
+                            write_to_file(out_file, '\n')
 
                 except Exception as e:
                     print(str(e))
 
         ######## calc error_num
-        index = test_data.level - 1
-        if pre_level <= test_data.level:
-            level_error_num[index] += test_data.error_num
-        elif pre_level > test_data.level:
-            test_data.error_num = np.sum(level_error_num[index + 1:])
-            level_error_num[index] += test_data.error_num
-            level_error_num[index + 1:] = 0
+        for flag in test_flag:
+            index = test_data.level - 1
+            if pre_level <= test_data.level:
+                if flag == "all":
+                    level_error_num['all'][index] += test_data.all_error_num
+                elif flag == "heji":
+                    level_error_num['heji'][index] += test_data.heji_error_num
+                elif flag == "ztgz":
+                    level_error_num['ztgz'][index] += test_data.ztgz_error_num
+            elif pre_level > test_data.level:
+                if flag == "all":
+                    test_data.all_error_num = np.sum(level_error_num['all'][index + 1:])
+                    level_error_num['all'][index] += test_data.all_error_num
+                elif flag == "heji":
+                    test_data.heji_error_num = np.sum(level_error_num['heji'][index + 1:])
+                    level_error_num['heji'][index] += test_data.heji_error_num
+                elif flag == "ztgz":
+                    test_data.ztgz_error_num = np.sum(level_error_num['ztgz'][index + 1:])
+                    level_error_num['ztgz'][index] += test_data.ztgz_error_num
 
-        if test_data.level == 1:
-            level_error_num[:] = 0
+                level_error_num[flag][index + 1:] = 0
+
+            if test_data.level == 1:
+                level_error_num[flag][:] = 0
 
         #print("path: %s, pre_level: %d, level: %d, error_num: %d" % (root, pre_level, test_data.level, test_data.error_num))
         pre_level = test_data.level
