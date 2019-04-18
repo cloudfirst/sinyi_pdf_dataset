@@ -19,22 +19,6 @@ compare_ztgz = gen_compare_ztgz()
 logger = get_my_logger()
 db_name = 'test.db'
 
-def gen_compare_ztgz(alt_ztgz = False):
-    big_table = gen_big_table()
-    get_ztgz = gen_get_value(big_table)
-    def compare_ztgz(ret, gt):
-        gt_v = focus_words(gt)
-        ret_v = get_ztgz(focus_words(ret))
-        return gt_v == ret_v
-    def compare_ztgz_alt(ret, gt):
-        gt_v = focus_words(gt)
-        ret_v = find_most_like(focus_words(ret))
-        return gt_v == ret_v
-    if alt_ztgz:
-        return compare_ztgz_alt
-    else:
-        return compare_ztgz
-
 def get_statistic_result(data_list, result_path):
 
     data_list.reverse()
@@ -80,7 +64,7 @@ def rec_img(path):
     
     # Step 4: 识别表格中每一行的文本，并查找关键字极其取值
     logger.error("step_4_read_keyword_and_value ...")
-    areas, ztgz = step_4_read_keyword_and_value_v2(text_blocks, filename)
+    areas, ztgz, confidence = step_4_read_keyword_and_value_v2(text_blocks, filename)
     
     ret = {}
     ret['filename']  = path
@@ -92,7 +76,7 @@ def rec_img(path):
         ret['heji2'] = "0.0"
     
     ret['ztgz']      = ztgz
-    ret['confident'] = 0.8
+    ret['confident'] = float('%.2f' % (confidence * 100 ))
     ret['Status']    = "OK"
     ret['ErrDesc']   = ""
     
@@ -143,7 +127,7 @@ def main():
     setup_train_args(parser)
     args = parser.parse_args()
 
-    compare_ztgz = gen_compare_ztgz(alt_ztgz=args.alt_ztgz)
+    compare_ztgz = gen_compare_ztgz()
 
     if args.root == False or args.result == False:
         usage()
