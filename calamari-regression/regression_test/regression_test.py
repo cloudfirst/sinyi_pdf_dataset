@@ -99,14 +99,6 @@ def get_result(test_data, gt, ret, flag, compare_ztgz):
     if flag == "ztgz":
         return compare_ztgz(ret['ztgz'], gt[0])
 
-'''
-def calc_error_num(test_data_list):
-    error_num = 0
-
-    for test_data in test_data_list:
-        if test_data.child_path:
-           for tes
-'''
 
 def setup_train_args(parser):
     parser.add_argument("-r", "--root", default=False, help='root path of data')
@@ -136,16 +128,19 @@ def main():
     test_data_list, level = gen_test_data(args.root)
 
     for test_data in test_data_list:
-
+        relativetop = test_data.relative_path.split("/")[0]
         if test_data == test_data_list[0]:
+            pre_relativetop = test_data.relative_path.split("/")[0]
+        if (test_data == test_data_list[0]) or (relativetop != pre_relativetop):
             pre_level = test_data.level
             level_error_num = dict()
             level_error_num.clear()
-            level_error_num['all'] = np.zeros((pre_level,), dtype=np.int)
-            level_error_num['heji'] = np.zeros((pre_level,), dtype=np.int)
-            level_error_num['ztgz'] = np.zeros((pre_level,), dtype=np.int)
+            level_error_num['all'] = np.zeros((pre_level + 2,), dtype=np.int)
+            level_error_num['heji'] = np.zeros((pre_level + 2,), dtype=np.int)
+            level_error_num['ztgz'] = np.zeros((pre_level + 2,), dtype=np.int)
 
         test_flag = ["all", "heji", "ztgz"]
+        #test_flag = ["all"]
         if test_data.files:
             # test_data is of type TestData
             print("-----path: %s------" % (test_data.relative_path))
@@ -184,32 +179,37 @@ def main():
         ######## calc error_num
         for flag in test_flag:
             index = test_data.level - 1
-            if pre_level <= test_data.level:
-                if flag == "all":
-                    level_error_num['all'][index] += test_data.all_error_num
-                elif flag == "heji":
-                    level_error_num['heji'][index] += test_data.heji_error_num
-                elif flag == "ztgz":
-                    level_error_num['ztgz'][index] += test_data.ztgz_error_num
-            elif pre_level > test_data.level:
-                if flag == "all":
-                    test_data.all_error_num = np.sum(level_error_num['all'][index + 1:])
-                    level_error_num['all'][index] += test_data.all_error_num
-                elif flag == "heji":
-                    test_data.heji_error_num = np.sum(level_error_num['heji'][index + 1:])
-                    level_error_num['heji'][index] += test_data.heji_error_num
-                elif flag == "ztgz":
-                    test_data.ztgz_error_num = np.sum(level_error_num['ztgz'][index + 1:])
-                    level_error_num['ztgz'][index] += test_data.ztgz_error_num
+            if relativetop != test_data.relative_path[0:-1]:
+                if pre_level <= test_data.level:
+                    if flag == "all":
+                        level_error_num['all'][index] += test_data.all_error_num
+                    elif flag == "heji":
+                        level_error_num['heji'][index] += test_data.heji_error_num
+                    elif flag == "ztgz":
+                        level_error_num['ztgz'][index] += test_data.ztgz_error_num
+                elif pre_level > test_data.level:
+                    if flag == "all":
+                        test_data.all_error_num = np.sum(level_error_num['all'][index + 1:])
+                        level_error_num['all'][index] += test_data.all_error_num
+                    elif flag == "heji":
+                        test_data.heji_error_num = np.sum(level_error_num['heji'][index + 1:])
+                        level_error_num['heji'][index] += test_data.heji_error_num
+                    elif flag == "ztgz":
+                        test_data.ztgz_error_num = np.sum(level_error_num['ztgz'][index + 1:])
+                        level_error_num['ztgz'][index] += test_data.ztgz_error_num
 
-                level_error_num[flag][index + 1:] = 0
+                    level_error_num[flag][index + 1:] = 0
+            else:
+                if not test_data.files:
+                    if flag == "all":
+                        test_data.all_error_num = level_error_num['all'][index]
+                    elif flag == "heji":
+                        test_data.heji_error_num = level_error_num['heji'][index]
+                    elif flag == "ztgz":
+                        test_data.ztgz_error_num = level_error_num['ztgz'][index]
 
-            if test_data.level == 1:
-                level_error_num[flag][:] = 0
-
-        #print("path: %s, pre_level: %d, level: %d, error_num: %d" % (root, pre_level, test_data.level, test_data.error_num))
         pre_level = test_data.level
-        ######## calc error_num
+        pre_relativetop = relativetop
 
     get_statistic_result(test_data_list, args.result)
 

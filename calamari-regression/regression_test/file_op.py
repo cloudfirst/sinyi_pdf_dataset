@@ -48,20 +48,32 @@ def gen_test_data(root_path):
     pre_level = 0
     level = 0
 
+    top = root_path.split("/")[-1]
+    if not top.strip():
+        top = root_path.split("/")[-2]
+        hasslash = True
+    else:
+        hasslash = False
     for root, dirs, files in os.walk(root_path, topdown = False): 
-        if root != root_path:
             test_data = TestData()
 
             test_data.upper_path = os.path.split(root)[0]
             test_data.full_path = root
-            test_data.relative_path = root[len(root_path):]
+            if hasslash:
+                test_data.relative_path = top+root[len(root_path)-1:]
+            else:
+                test_data.relative_path = top+root[len(root_path):]
             test_data.level = test_data.relative_path.count('/')
 
+            relativetop = test_data.relative_path.split("/")[0]
             # the first time coming in this loop
             if not len(test_data_list):
+                pre_relativetop = test_data.relative_path.split("/")[0]
                 pre_level = test_data.level 
                 level_total_num = np.zeros((pre_level + 2,), dtype=np.int)
 
+            if (relativetop != pre_relativetop) and (root!=root_path):
+                level_total_num[:] = 0
             if level < test_data.level:
                 level = test_data.level
 
@@ -83,23 +95,33 @@ def gen_test_data(root_path):
                         raise Exception("pdf %s does not have corresponding gt.txt file, check your training data file!" % shotname)
                
             index = max(0, test_data.level - 1)
+            if root != root_path:
+                if pre_level <= test_data.level:
+                    level_total_num[index] += test_data.total_num
+                elif pre_level > test_data.level:
+                    tmp_total_num = np.sum(level_total_num[index + 1:])
+                    if tmp_total_num != 0:
+                        test_data.total_num = tmp_total_num
+                        level_total_num[index] += test_data.total_num
+                        level_total_num[index + 1:] = 0
+                    else:
+                        test_data.total_num = level_total_num[index]
+            else:
+                if test_data.total_num == 0:
+                    tmp_total_num = np.sum(level_total_num[index + 1:])
+                    if tmp_total_num != 0:
+                        test_data.total_num = tmp_total_num
+                        level_total_num[index] += test_data.total_num
+                        level_total_num[index + 1:] = 0
+                    else:
+                        test_data.total_num = level_total_num[index]
+                else:
+                    level_total_num[index] += test_data.total_num
 
-            if pre_level <= test_data.level:
-                level_total_num[index] += test_data.total_num
-            elif pre_level > test_data.level:
-                test_data.total_num = np.sum(level_total_num[index + 1:])
-                level_total_num[index] += test_data.total_num
-                level_total_num[index + 1:] = 0
-
-            if test_data.level == 1:
-                level_total_num[:] = 0
-
-            #print("path: %s, pre_level: %d, level: %d, total_num: %d" % (root, pre_level, test_data.level, test_data.total_num))
-            #print(level_total_num)
-
+            pre_relativetop = relativetop
             test_data_list.append(test_data)
             pre_level = test_data.level
-       
+
     return test_data_list, level
 
 #root = '/home/luhya/Documents/src/xy_train_data/calamari-regression/test_data'
